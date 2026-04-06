@@ -46,6 +46,10 @@ class ProcessaCliente(threading.Thread):
                     if pedido.get("acao") == "FLAP":
                         print(f"[AÇÃO] O jogador '{nome}' (ID: {self.player_id}) voou")
                         self.dados.atualizar_posicao(self.player_id, "FLAP")
+                    
+                    bateu_no_teto = self.dados.atualizar_posicao(self.player_id, "FLAP")   
+                    if bateu_no_teto:
+                        print(f"[!] O jogador '{nome}' (ID: {self.player_id}) morreu!")
 
                 except socket.timeout:
                     morreu = self.dados.aplicar_gravidade(self.player_id)
