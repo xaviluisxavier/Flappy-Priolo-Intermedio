@@ -45,8 +45,11 @@ class DadosJogo:
                     if nova_pos < 0:
                         self.jogadores[player_id]['y'] = 20
                         self.jogadores[player_id]['score'] = 0
+                        return True
                     else:
                         self.jogadores[player_id]['y'] = nova_pos
+                        return False
+        return False
 
     def aplicar_gravidade(self, player_id):
         """
@@ -107,5 +110,5 @@ class DadosJogo:
             # Envia o estado de todos os jogadores e também a lista de vulcões
             return {
                 'jogadores': self.jogadores.copy(),
-                'vulcoes': list(self.vulcoes) # Permite ao cliente saber onde os vulcões estão
+                'vulcoes': list(self.vulcoes)
             }
