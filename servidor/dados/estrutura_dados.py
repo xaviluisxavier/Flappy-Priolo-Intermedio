@@ -22,6 +22,10 @@ class DadosJogo:
             if len(self.jogadores) >= 5:
                 return False # Recusa a entrada
             
+            for player_id, dados in self.jogadores.items():
+                if dados['nome'] == nome:
+                    return False, "NOME JÁ EXISTE"
+            
             # Guardamos posição no ecrã (X fixo e Y variável), pontuação e nome
             self.jogadores[player_id] = {
                 'nome': nome, 
@@ -29,7 +33,7 @@ class DadosJogo:
                 'y': 20, 
                 'score': 0
             }
-            return True # Entrada com sucesso
+            return True, "SUCESSO" # Entrada com sucesso
 
     def remover_jogador(self, player_id):
         with self.lock:
