@@ -2,6 +2,7 @@ import threading
 
 class ListaClientes:
     def __init__(self):
+        """Inicializa a lista de clientes conectados e um lock para garantir a segurança em operações concorrentes."""
         self._clientes = {} 
         self._lock = threading.Lock()
 
