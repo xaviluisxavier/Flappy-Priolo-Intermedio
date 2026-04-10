@@ -3,6 +3,7 @@ import random
 
 class DadosJogo:
     def __init__(self):
+        """Inicializa os dados do jogo, incluindo jogadores, vulcões e parâmetros do jogo."""
         # Dicionário para guardar os jogadores
         self.jogadores = {} 
         self.lock = threading.Lock() 
