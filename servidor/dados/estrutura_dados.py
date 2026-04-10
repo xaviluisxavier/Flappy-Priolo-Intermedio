@@ -17,6 +17,7 @@ class DadosJogo:
         self.posicao_x_priolos = 20 
 
     def adicionar_jogador(self, player_id, nome):
+       """Adiciona um jogador ao jogo, verificando o limite de jogadores e a unicidade do nome."""
        with self.lock:
             # 1. Verifica limite de jogadores
             if len(self.jogadores) >= 5:
@@ -37,11 +38,13 @@ class DadosJogo:
             return True, "SUCESSO"
 
     def remover_jogador(self, player_id):
+        """Remove um jogador do jogo usando seu ID."""
         with self.lock:
             if player_id in self.jogadores:
                 del self.jogadores[player_id]
 
     def atualizar_posicao(self, player_id, acao):
+        """Atualiza a posição do jogador com base na ação recebida (FLAP)."""
         with self.lock:
             if player_id in self.jogadores:
                 if acao == "FLAP":
@@ -57,9 +60,7 @@ class DadosJogo:
         return False
 
     def aplicar_gravidade(self, player_id):
-        """
-        Aplica a gravidade ao jogador e verifica colisões com o chão e com os vulcões.
-        """
+        """Aplica a gravidade ao jogador e verifica colisões com o chão e com os vulcões."""
         with self.lock:
             if player_id not in self.jogadores:
                 return False
@@ -90,6 +91,7 @@ class DadosJogo:
         
 
     def verificar_pontos(self):
+        """Verifica se os jogadores passaram pelos vulcões e atualiza a pontuação."""
         with self.lock:
             for v in self.vulcoes:
                 # Se o vulcão passou a posição X dos pássaros
@@ -99,6 +101,7 @@ class DadosJogo:
                     v['contado'] = True 
 
     def atualizar_mundo(self):
+        """Move os vulcões para a esquerda e gera novos vulcões quando necessário."""
         with self.lock:
             for v in self.vulcoes:
                 v['x'] -= self.velocidade_tubos
@@ -111,6 +114,7 @@ class DadosJogo:
                 self.vulcoes.append({'x': 100, 'abertura_y': nova_abertura, 'contado': False})
 
     def obter_estado(self):
+        """Retorna o estado atual do jogo, incluindo a posição dos jogadores e dos vulcões."""
         with self.lock:
             # Envia o estado de todos os jogadores e também a lista de vulcões
             return {
