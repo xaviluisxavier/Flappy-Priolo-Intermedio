@@ -11,6 +11,7 @@ class ProcessaCliente(threading.Thread):
         self.player_id = player_id
 
     def run(self):
+        """Gerencia a comunicação com um cliente específico, processando suas ações e atualizando o estado do jogo."""
         try:
             msg_inicial = receive_object(self.connection)
             if msg_inicial and msg_inicial.get("acao") == "ENTRAR":
