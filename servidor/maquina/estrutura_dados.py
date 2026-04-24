@@ -20,8 +20,8 @@ class DadosJogo:
                 
         # Parâmetros físicos
         self.gravidade = 5
-        self.velocidade_tubos = 2
-        self.distancia_entre_tubos = 60
+        self.velocidade_vulcoes = 2
+        self.distancia_entre_vulcoes = 60
         self.posicao_x_priolos = 20 
 
     def adicionar_jogador(self, player_id, nome):
