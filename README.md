@@ -69,6 +69,7 @@ Para correr a versão final do cliente gráfico, é necessário instalar as segu
 ```bash
 pip install pygame
 pip install pillow
+```
 
 ### Anexo: Prompt de Apoio à Transição para Pygame
 
