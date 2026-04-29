@@ -4,7 +4,7 @@ import cliente
 
 class BroadcastReceiver(threading.Thread):
     """
-    Classe responsável APENAS por escutar o servidor em segundo plano.
+    Classe responsável APENAS por ouvir o servidor em segundo plano.
     Quando recebe um novo estado, passa-o para a Interface desenhar.
     """
 
