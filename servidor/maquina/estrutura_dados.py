@@ -109,4 +109,12 @@ class DadosJogo:
                     'score': j['score'],
                     'vulcoes': [{'id': v.get('id', 0), 'x': int(v['x']), 'abertura_y': int(v['abertura_y']), 'contado': v['contado']} for v in j['vulcoes']]
                 }
-            return {'jogadores': estado_limpo}
+
+            parametros_atuais = {
+                'gravidade': round(self.gravidade_base, 2),
+                'salto': round(self.salto_base, 2),
+                'velocidade': round(self.velocidade_base, 2),
+                'distancia': self.distancia_entre_tubos,
+                'v_ids': self.v_id_counter
+            }
+            return {'jogadores': estado_limpo, 'parametros': parametros_atuais}
