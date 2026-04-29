@@ -50,25 +50,38 @@ Para a versão final do projeto, a visualização em terminal baseada em turnos 
 
 ### 5.1. Nova Arquitetura do Cliente
 Na versão baseada em terminal, a thread de receção de dados (`BroadcastReceiver`) era responsável por limpar e desenhar o ecrã. No entanto, em aplicações gráficas, desenhar a partir de threads secundárias causa instabilidade e *crashes*.
-* **Solução:** O `BroadcastReceiver` passou a ter uma função puramente passiva. Ele apenas escuta os pacotes JSON vindos do servidor e guarda-os numa variável partilhada (`self.estado_atual = estado`).
-* **Game Loop:** A classe `InterfaceGrafica` corre no *Main Thread* a 60 FPS. Em cada ciclo, ela lê o último `estado_atual` disponível e desenha os elementos no ecrã.
+* **Solução:** O `BroadcastReceiver` passou a ter uma função puramente passiva. Ele apenas ouve os pacotes JSON vindos do servidor e guarda-os numa variável partilhada (`self.estado_atual = estado`).
+* **Game Loop:** A classe `InterfaceGrafica` corre no *Main Thread*. Em cada ciclo, ela lê o último `estado_atual` disponível e desenha os elementos no ecrã.
 
 ### 5.2. Interpolação de Movimento (Movement Smoothing)
 Como o servidor opera a um *Tick Rate* de ~33 FPS (envia dados a cada 0.03s) para poupar largura de banda, desenhar as coordenadas exatas causaria um movimento "engasgado". Para resolver isto, implementámos interpolação visual:
 * O cliente não desenha o Priolo e os Vulcões exatamente onde o servidor diz que eles estão. Em vez disso, ele define essas coordenadas como "alvos" (`target_x` e `target_y`).
-* A cada *frame* (a 60 FPS), o Pygame desliza suavemente os *sprites* da sua posição visual atual em direção à posição alvo matemática.
+* A cada *frame*, o Pygame desliza suavemente os *sprites* da sua posição visual atual em direção à posição alvo matemática.
 * **O Papel das IDs:** Para que a interpolação dos vulcões funcione sem erros, o servidor gera um `id` único para cada vulcão. O cliente usa este ID para saber exatamente qual vulcão deve deslizar para onde, evitando que os obstáculos deem "teleporte" no ecrã quando o primeiro vulcão da lista é apagado pelo servidor.
 
 ### 5.3. Física Visual e Animações
 A interface foi programada para reagir de forma orgânica às leis da física enviadas pelo servidor:
 * **Rotação Dinâmica (Tilt):** O ângulo do pássaro no ecrã ajusta-se consoante a sua velocidade vertical. Se estiver a cair, o *sprite* roda para apontar para baixo; se receber um impulso ("FLAP"), roda para apontar para cima.
-* **Processamento de Assets:** O fundo do jogo suporta animações contínuas (GIFs), extraindo *frames* utilizando a biblioteca `PIL` (Pillow), garantindo que o ciclo de dia/noite ou os elementos do fundo se movem independentemente dos pacotes de rede.
+* **Processamento de Assets:** O fundo do jogo suporta animações contínuas (GIFs), extraindo *frames* utilizando a biblioteca `PIL` (Pillow), garantindo que os elementos do fundo se movem independentemente dos pacotes de rede.
 
 ### 5.4. Dependências Necessárias
 Para correr a versão final do cliente gráfico, é necessário instalar as seguintes bibliotecas Python:
 ```bash
 pip install pygame
 pip install pillow
+
+### Anexo: Prompt de Apoio à Transição para Pygame
+
+Para converter a interface de terminal numa interface gráfica funcional, foi utilizado o seguinte prompt técnico:
+
+> **Prompt:**
+> "Cria uma classe `InterfaceGrafica` em Pygame para um jogo multiplayer (Flappy Bird style). 
+> 
+> **Requisitos Técnicos:**
+> 1. **Arquitetura de Threads:** O `BroadcastReceiver` (rede) deve apenas atualizar uma variável `estado_atual`. O Pygame deve correr no Main Thread, lendo essa variável para renderizar o ecrã a 60 FPS.
+> 2. **Suavização (Smoothing):** Implementa interpolação linear para as coordenadas Y dos jogadores e X dos obstáculos, garantindo fluidez visual entre os pacotes de rede (recebidos a 33 FPS).
+> 3. **Gestão de IDs:** Usa o 'id' único de cada vulcão enviado pelo servidor para manter a consistência da interpolação e evitar 'teleportes' visuais quando a lista de obstáculos é atualizada.
+> 4. **Estética:** Inclui rotação do sprite baseada na velocidade vertical (tilt) e funções para carregar backgrounds animados (GIF) e assets de vulcões."
 
 ---
 
