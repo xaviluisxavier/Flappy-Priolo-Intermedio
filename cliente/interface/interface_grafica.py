@@ -82,6 +82,7 @@ class InterfaceGrafica:
 
         self.connection = socket.socket()
         self.paused = False
+        self.mostrar_debug = False
         
         # Dicionários para interpolação de movimento fluida
         self.suave_y = {} 
@@ -196,12 +197,13 @@ class InterfaceGrafica:
 
         # 3. LEADERBOARD
         self.win.blit(self.LEADERBOARD_BG, (WIDTH - 210, 10))
+        self.LEADERBOARD_BG.set_alpha(80)
         draw_text_shadow(self.win, "TOP PLAYERS", self.SMALL_FONT, YELLOW, WIDTH - 200, 15)
         
         sorted_players = sorted(estado['jogadores'].items(), key=lambda x: x[1]['score'], reverse=True)
         for i, (p_id, p_data) in enumerate(sorted_players[:5]):
             txt = f"{i+1}. {p_data['nome'][:8]}: {p_data['score']}"
-            cor = YELLOW if p_data['nome'] == meu_nome else WHITE
+            cor = WHITE if p_data['nome'] == meu_nome else WHITE
             draw_text_shadow(self.win, txt, self.SMALL_FONT, cor, WIDTH - 200, 45 + (i * 22))
 
         # 4. PAUSA OVERLAY
@@ -211,84 +213,140 @@ class InterfaceGrafica:
             draw_styled_button(self.win, pygame.Rect(WIDTH//2-100, 250, 200, 50), "RETOMAR", self.FONT, GREEN, GREEN_HOVER, WHITE)
             draw_styled_button(self.win, pygame.Rect(WIDTH//2-100, 320, 200, 50), "SAIR", self.FONT, RED, RED_HOVER, WHITE)
 
+        # 5. DEBUG OVERLAY: PARÂMETROS DO SERVIDOR
+        if self.mostrar_debug and 'parametros' in estado:
+            p = estado['parametros']
+            
+            meu_score = 0
+            for pid, info in estado['jogadores'].items():
+                if info['nome'] == meu_nome:
+                    meu_score = info['score']
+                    break
+
+            velocidade_real = p['velocidade'] + ((meu_score // 5) * 0.2)
+            
+            linhas_debug = [
+                f"Gravidade: {p['gravidade']}",
+                f"Força Salto: {p['salto']}",
+                f"Velocidade Base: {p['velocidade']}",
+                f"Velocidade ATUAL: {round(velocidade_real, 2)}",
+                f"Distância Tubos: {p['distancia']}",
+                f"Vulcões Gerados: {p['v_ids']}"
+            ]
+            
+            # Criar um fundo semi-transparente
+            debug_bg = pygame.Surface((240, 145))
+            debug_bg.set_alpha(80)
+            debug_bg.fill(BLACK)
+            self.win.blit(debug_bg, (5, 5))
+            
+            # Escrever o texto linha a linha
+            draw_text_shadow(self.win, "SERVER INFO", self.SMALL_FONT, YELLOW, 10, 10)
+            for i, texto in enumerate(linhas_debug):
+                draw_text_shadow(self.win, texto, self.SMALL_FONT, WHITE, 10, 30 + (i * 18))
+
         pygame.display.update()
 
     def execute(self):
-        btn_multi = pygame.Rect(WIDTH//2 - 150, 280, 300, 60)
-        btn_quit = pygame.Rect(WIDTH//2 - 150, 360, 300, 60)
-        bg_idx = 0
-        
-        menu_running = True
-        while menu_running:
-            bg_idx = (pygame.time.get_ticks() // 100) % len(self.BACKGROUND_FRAMES)
-            self.win.blit(self.BACKGROUND_FRAMES[bg_idx], (0,0))
-            draw_text_shadow(self.win, "FLAPPY PRIOLO", self.BIG_FONT, WHITE, WIDTH//2 - 210, 100)
-            
-            draw_styled_button(self.win, btn_multi, "MULTIPLAYER", self.BUTTON_FONT, GREEN, GREEN_HOVER, WHITE)
-            draw_styled_button(self.win, btn_quit, "QUIT", self.BUTTON_FONT, RED, RED_HOVER, WHITE)
-            pygame.display.update()
-
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT: sys.exit()
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    if btn_multi.collidepoint(event.pos): menu_running = False
-                    if btn_quit.collidepoint(event.pos): sys.exit()
-
-        meu_nome = self.ask_for_name(bg_idx)
-        
-        self.win.blit(self.BACKGROUND_FRAMES[bg_idx], (0,0))
-        draw_text_shadow(self.win, "A conectar ao servidor...", self.FONT, YELLOW, WIDTH//2 - 160, HEIGHT//2)
-        pygame.display.update()
-        
-        try:
-            self.connection.connect((cliente.SERVER_ADDRESS, cliente.PORT))
-            self.connection.send(meu_nome.encode())
-        except ConnectionRefusedError:
-            self.win.blit(self.PAUSE_BG, (0,0))
-            draw_text_shadow(self.win, "ERRO: Servidor Desligado!", self.FONT, RED, WIDTH//2 - 180, HEIGHT//2)
-            pygame.display.update()
-            pygame.time.delay(3000)
-            sys.exit()
-
-        receiver = BroadcastReceiver(self.connection)
-        receiver.start()
-
-        clock = pygame.time.Clock()
-        bg_timer = 0
-
         while True:
-            clock.tick(60)
+            btn_multi = pygame.Rect(WIDTH//2 - 150, 280, 300, 60)
+            btn_quit = pygame.Rect(WIDTH//2 - 150, 360, 300, 60)
+            bg_idx = 0
             
-            if not self.paused:
-                bg_timer += 1
-                if bg_timer >= 10:
-                    bg_idx = (bg_idx + 1) % len(self.BACKGROUND_FRAMES)
-                    bg_timer = 0
-            
-            if not receiver.ativo:
-                self.win.blit(self.PAUSE_BG, (0, 0))
-                draw_text_shadow(self.win, "LIGAÇÃO RECUSADA/PERDIDA", self.FONT, RED, WIDTH//2 - 200, HEIGHT//2 - 50)
-                draw_text_shadow(self.win, "(O servidor caiu, ou o teu nome já existe)", self.SMALL_FONT, WHITE, WIDTH//2 - 220, HEIGHT//2 + 10)
+            # 1. MENU INICIAL
+            menu_running = True
+            while menu_running:
+                bg_idx = (pygame.time.get_ticks() // 100) % len(self.BACKGROUND_FRAMES)
+                self.win.blit(self.BACKGROUND_FRAMES[bg_idx], (0,0))
+                draw_text_shadow(self.win, "FLAPPY PRIOLO", self.BIG_FONT, WHITE, WIDTH//2 - 210, 100)
+                
+                draw_styled_button(self.win, btn_multi, "MULTIPLAYER", self.BUTTON_FONT, GREEN, GREEN_HOVER, WHITE)
+                draw_styled_button(self.win, btn_quit, "QUIT", self.BUTTON_FONT, RED, RED_HOVER, WHITE)
                 pygame.display.update()
-                pygame.time.delay(4000)
-                sys.exit()
 
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    self.connection.send("END".encode())
-                    sys.exit()
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT: sys.exit()
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        if btn_multi.collidepoint(event.pos): menu_running = False
+                        if btn_quit.collidepoint(event.pos): sys.exit()
+
+            # 2. PEDE NOME
+            meu_nome = self.ask_for_name(bg_idx)
+            
+            # 3. PREPARA LIGAÇÃO
+            self.connection = socket.socket()
+            self.paused = False
+            self.suave_y = {} 
+            self.suave_vx = {} 
+            self.tilt = {}
+            voltar_ao_menu = False
+            
+            self.win.blit(self.BACKGROUND_FRAMES[bg_idx], (0,0))
+            draw_text_shadow(self.win, "A conectar ao servidor...", self.FONT, YELLOW, WIDTH//2 - 160, HEIGHT//2)
+            pygame.display.update()
+            
+            try:
+                self.connection.connect((cliente.SERVER_ADDRESS, cliente.PORT))
+                self.connection.send(meu_nome.encode())
+            except ConnectionRefusedError:
+                self.win.blit(self.PAUSE_BG, (0,0))
+                draw_text_shadow(self.win, "ERRO: Servidor Desligado!", self.FONT, RED, WIDTH//2 - 180, HEIGHT//2)
+                pygame.display.update()
+                pygame.time.delay(3000)
+                continue # Em vez de fechar, volta ao menu inicial!
+
+            receiver = BroadcastReceiver(self.connection)
+            receiver.start()
+
+            clock = pygame.time.Clock()
+            bg_timer = 0
+
+            # 4. CICLO DO JOGO (MULTI)
+            while not voltar_ao_menu:
+                clock.tick(60)
                 
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_ESCAPE: self.paused = not self.paused
+                if not self.paused:
+                    bg_timer += 1
+                    if bg_timer >= 10:
+                        bg_idx = (bg_idx + 1) % len(self.BACKGROUND_FRAMES)
+                        bg_timer = 0
+                
+                if not receiver.ativo:
+                    self.win.blit(self.PAUSE_BG, (0, 0))
+                    draw_text_shadow(self.win, "LIGAÇÃO RECUSADA/PERDIDA", self.FONT, RED, WIDTH//2 - 200, HEIGHT//2 - 50)
+                    draw_text_shadow(self.win, "(O servidor caiu, ou o teu nome já existe)", self.SMALL_FONT, WHITE, WIDTH//2 - 220, HEIGHT//2 + 10)
+                    pygame.display.update()
+                    pygame.time.delay(4000)
+                    voltar_ao_menu = True # Volta ao menu se o servidor for abaixo
+                    break
+
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        try: self.connection.send("END".encode())
+                        except: pass
+                        sys.exit()
                     
-                    if not self.paused and (event.key == pygame.K_SPACE or event.key == pygame.K_UP):
-                        self.connection.send("FLAP".encode())
-                
-                if self.paused and event.type == pygame.MOUSEBUTTONDOWN:
-                    mx, my = pygame.mouse.get_pos()
-                    if WIDTH//2-100 <= mx <= WIDTH//2+100:
-                        if 250 <= my <= 300: self.paused = False
-                        if 320 <= my <= 370: sys.exit()
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_ESCAPE: self.paused = not self.paused
+                        
+                        if event.key == pygame.K_d: 
+                            self.mostrar_debug = not self.mostrar_debug
 
-            if hasattr(receiver, 'estado_atual'):
-                self.draw_game(receiver.estado_atual, meu_nome, bg_idx)
+                        if not self.paused and (event.key == pygame.K_SPACE or event.key == pygame.K_UP):
+                            self.connection.send("FLAP".encode())
+                    
+                    if self.paused and event.type == pygame.MOUSEBUTTONDOWN:
+                        mx, my = pygame.mouse.get_pos()
+                        if WIDTH//2-100 <= mx <= WIDTH//2+100:
+                            if 250 <= my <= 300: 
+                                self.paused = False # Botão RETOMAR
+                            if 320 <= my <= 370: 
+                                # Botão SAIR -> Volta ao menu inicial!
+                                try: self.connection.send("END".encode()) 
+                                except: pass
+                                self.connection.close()
+                                receiver.ativo = False
+                                voltar_ao_menu = True
+                
+                if hasattr(receiver, 'estado_atual'):
+                    self.draw_game(receiver.estado_atual, meu_nome, bg_idx)
