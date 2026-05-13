@@ -3,6 +3,7 @@
 
 ## 1. Descrição do Jogo
 O "Flappy Priolo" é um jogo multiplayer distribuído com uma mecânica de sobrevivência e precisão. 
+
 **Objetivo:** O objetivo é controlar a personagem (o pássaro Priolo) e passar pelo maior número possível de obstáculos (vulcões) sem ir contra nenhum deles.
 
 **Regras e Pontuação:**
